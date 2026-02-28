@@ -37,6 +37,7 @@ jobs:
       uses: gittools/actions/gitversion/execute@v3.1.11
 
   build-netcore-tool:
+    if: false # Disabled - only building Docker images
     needs: set-version-number
     name: Build .NET Core (global) tool
 
@@ -71,6 +72,7 @@ jobs:
       run: dotnet nuget push /tmp/grate/nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_ORG_KEY }} --skip-duplicate
   
   build-nuget-package:
+    if: false # Disabled - only building Docker images
     needs: set-version-number
     name: Build Nuget
 
@@ -113,6 +115,7 @@ jobs:
       run: dotnet nuget push /tmp/grate/nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_ORG_KEY }} --skip-duplicate
 
   build-standalone:
+    if: false # Disabled - only building Docker images
     name: Build cli
     needs: set-version-number
 
@@ -157,6 +160,7 @@ jobs:
 
 
   build-standalone-mac-arm64:
+    if: false # Disabled - only building Docker images
     name: Build cli
     needs: set-version-number
 
@@ -203,12 +207,12 @@ jobs:
         GH_TOKEN: ${{ github.token }}
   
   build-msi:
+    if: false # Disabled - only building Docker images
     name: Build MSI
-    needs: 
+    needs:
      - set-version-number
      - build-standalone
     runs-on: windows-latest
-    if: ${{ needs.set-version-number.outputs.is-release == 'true' }}
     strategy:
       matrix:
         arch: [ "win-x64", "win-arm64" ]
@@ -271,7 +275,6 @@ jobs:
 
     - name: Log in to the Container registry
       uses: docker/login-action@v3
-      if: ${{ needs.set-version-number.outputs.is-release == 'true' }}
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -280,11 +283,11 @@ jobs:
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v5
-      if: ${{ needs.set-version-number.outputs.is-release == 'true' }}
       with:
         tags: |
-          type=semver,pattern={{version}}
-          type=semver,pattern={{version}},value=${{ needs.set-version-number.outputs.semVer }}
+          type=raw,value=latest
+          type=semver,pattern={{version}},enable=${{ needs.set-version-number.outputs.is-release == 'true' }}
+          type=semver,pattern={{version}},value=${{ needs.set-version-number.outputs.semVer }},enable=${{ needs.set-version-number.outputs.is-release == 'true' }}
           type=ref,event=tag
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
@@ -294,19 +297,19 @@ jobs:
         file: ./installers/docker/Dockerfile
         context: .
         platforms: linux/amd64,linux/arm64
-        push: ${{ needs.set-version-number.outputs.is-release == 'true' }}
+        push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           VERSION=${{ needs.set-version-number.outputs.nuGetVersion }}
 
   build-deb:
+    if: false # Disabled - only building Docker images
     name: Build Debian package
-    needs: 
+    needs:
      - set-version-number
      - build-standalone
     runs-on: ubuntu-latest
-    if: ${{ needs.set-version-number.outputs.is-release == 'true' }}
     strategy:
       matrix:
         arch: [ "linux-arm64", "linux-x64" ]
